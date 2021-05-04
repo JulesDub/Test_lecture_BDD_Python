@@ -1,22 +1,35 @@
-import psycopg2
 import pandas as pd
-
 import psycopg2
+import json
 
-def main() :
+conn = psycopg2.connect("dbname=SIMM_LIEUX port=5432 user=admin password=admin")
+cur = conn.cursor()
+
+
+def main():
     data_list_a = csv_cleaner("CSV_file/import_colonies_fev2021.csv", "secteur_nom_fr", "longitude", "latitude", ";")
-    conn = psycopg2.connect("dbname=simm_lieux port=5432 user=super_user password=admin")
+    data_list_b = csv_cleaner("CSV_file/Export_Rinbio.csv", "LIEU_LIBELLE", "LONGITUDE", "LATITUDE", ",")
     print("Database opened successfully")
-    cur = conn.cursor()
-    i = len(data_list_a)
-    for x in range (i) :
-        sql = f"""INSERT INTO lieux_site_web(LIEU_LIBELLE) VALUES ('{data_list_a[x][0]}') """
-        cur.execute(sql)
-    conn.commit()
+    write_SQL(data_list_a)
+    write_SQL(data_list_b)
     cur.close()
     conn.close()
-    print("La connexion PostgreSQL est fermée")
+    print("Database closed successfully")
 
+
+def write_SQL(list_csv):
+    for x in range(len(list_csv)):
+        sql_write_tab = f"""
+        INSERT INTO LIEUX_SITE_WEB(lieu_position_point,lieu_libelle) 
+            VALUES 
+            ('POINT({list_csv[x][2]} {list_csv[x][1]})',
+            '{list_csv[x][0]}');
+        """
+        cur.execute(sql_write_tab)
+
+def create_pandas_table(sql_query, database = conn):
+    table = pd.read_sql_query(sql_query, database)
+    return table
 
 def csv_cleaner(path_csv, nom, lng, lat, sep):
     data = pd.read_csv(path_csv, usecols=[nom, lng, lat], sep=sep, encoding="utf8")
@@ -37,3 +50,12 @@ def csv_cleaner(path_csv, nom, lng, lat, sep):
 
 if __name__ == '__main__':
     main()
+
+"""    for x in range(len(data_list_b)):
+        xp_a = x + 1
+        xp_b = xp_a + len(data_list_a)
+        sql_write_tab_b = f
+        UPDATE lieux_site_web
+        SET lieu_position_point = 'POINT({data_list_b[x][2]} {data_list_b[x][1]})', lieu_libelle = '{data_list_b[x][0]}'
+        WHERE lieu_uid = {xp_b};
+        """
