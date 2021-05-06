@@ -10,20 +10,22 @@ def main():
     data_list_a = csv_cleaner("CSV_file/import_colonies_fev2021.csv", "secteur_nom_fr", "longitude", "latitude", ";")
     data_list_b = csv_cleaner("CSV_file/Export_Rinbio.csv", "LIEU_LIBELLE", "LONGITUDE", "LATITUDE", ",")
     print("Database opened successfully")
-    write_SQL(data_list_a)
-    write_SQL(data_list_b)
+    write_SQL(data_list_a, 159)
+    write_SQL(data_list_b, 117)
+    conn.commit()
     cur.close()
     conn.close()
     print("Database closed successfully")
 
 
-def write_SQL(list_csv):
+def write_SQL(list_csv, dispositif):
     for x in range(len(list_csv)):
         sql_write_tab = f"""
-        INSERT INTO LIEUX_SITE_WEB(lieu_position_point,lieu_libelle) 
+        INSERT INTO LIEUX_SITE_WEB(lieu_libelle, lieu_position_point, lieu_dispositif) 
             VALUES 
-            ('POINT({list_csv[x][2]} {list_csv[x][1]})',
-            '{list_csv[x][0]}');
+            ('{list_csv[x][0]}',
+            'POINT({list_csv[x][2]} {list_csv[x][1]})',
+            {dispositif});
         """
         cur.execute(sql_write_tab)
 
