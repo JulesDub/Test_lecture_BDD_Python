@@ -1,21 +1,35 @@
 import pandas as pd
 import psycopg2
 import json
+from flask import Flask, render_template, url_for
+
 
 conn = psycopg2.connect("dbname=SIMM_LIEUX port=5432 user=admin password=admin")
 cur = conn.cursor()
 
+app = Flask(__name__)
 
-def main():
+@app.route('/')
+def map_func():
+    return render_template('home.html')
+
+@app.route('/leaflet')
+def leaflet():
     data_list_a = csv_cleaner("CSV_file/import_colonies_fev2021.csv", "secteur_nom_fr", "longitude", "latitude", ";")
     data_list_b = csv_cleaner("CSV_file/Export_Rinbio.csv", "LIEU_LIBELLE", "LONGITUDE", "LATITUDE", ",")
     print("Database opened successfully")
-    write_SQL(data_list_a, 159)
+    df = create_pandas_table(
+        "SELECT LIEU_LIBELLE, st_asgeojson(lieu_position_point), lieu_dispositif FROM lieux_site_web")
+    data_from_db = df.values.tolist()
+    for i in range(len(data_from_db)):
+        data_from_db[i][1] = json.loads(data_from_db[i][1])
+    '''write_SQL(data_list_a, 159)
     write_SQL(data_list_b, 117)
     conn.commit()
     cur.close()
-    conn.close()
+    conn.close()'''
     print("Database closed successfully")
+    return render_template('leaflet.html', data=json.dumps(data_from_db))
 
 
 def write_SQL(list_csv, dispositif):
@@ -51,7 +65,7 @@ def csv_cleaner(path_csv, nom, lng, lat, sep):
     return data_list_f
 
 if __name__ == '__main__':
-    main()
+    app.run(debug=True)
 
 """    for x in range(len(data_list_b)):
         xp_a = x + 1
